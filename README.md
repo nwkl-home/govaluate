@@ -70,7 +70,7 @@ govaluate
 	//  期望：1 输出：Unable to access unexported field 'b' in token 'a.b'
 ```
 
-优化：优化map取值方式，跟结构体取值方式一样，区别是像结构体一样定义方法
+优化：优化map取值方式，跟结构体取值方式一样，区别是不像结构体一样定义方法
 
 联系本人
 --
