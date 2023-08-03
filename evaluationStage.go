@@ -238,6 +238,9 @@ func ltStage(left, right, leftStage, rightStage interface{}, parameters Paramete
 	return boolIface(leftFloat64 < rightFloat64), leftStage, rightStage, nil
 }
 func equalStage(left, right, leftStage, rightStage interface{}, parameters Parameters) (interface{}, interface{}, interface{}, error) {
+	if isString(left) && isString(right) {
+		return boolIface(reflect.DeepEqual(left.(string), right.(string))), leftStage, rightStage, nil
+	}
 	leftFloat64, err := convert2Float64(left)
 	if err != nil {
 		return nil, leftStage, rightStage, err
@@ -250,6 +253,9 @@ func equalStage(left, right, leftStage, rightStage interface{}, parameters Param
 	return boolIface(reflect.DeepEqual(leftFloat64, rightFloat64)), leftStage, rightStage, nil
 }
 func notEqualStage(left, right, leftStage, rightStage interface{}, parameters Parameters) (interface{}, interface{}, interface{}, error) {
+	if isString(left) && isString(right) {
+		return boolIface(!reflect.DeepEqual(left.(string), right.(string))), leftStage, rightStage, nil
+	}
 	leftFloat64, err := convert2Float64(left)
 	if err != nil {
 		return nil, leftStage, rightStage, err
