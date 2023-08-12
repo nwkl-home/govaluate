@@ -511,7 +511,7 @@ func makeAccessorStage(pair []string, isFunction bool) evaluationOperator {
 			}
 
 			if coreValue.Kind() == reflect.Struct {
-				if isFunction {
+				if !isFunction {
 					field := coreValue.FieldByName(pair[i])
 					if field != (reflect.Value{}) {
 						value = field.Interface()
