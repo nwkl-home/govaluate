@@ -517,6 +517,7 @@ func makeAccessorStage(pair []string, isFunction bool) evaluationOperator {
 						value = field.Interface()
 						continue
 					}
+					return nil, leftStage, rightStage, errors.New("No field '" + pair[i] + "' present on parameter '" + pair[i-1] + "'")
 				} else {
 					method := coreValue.MethodByName(pair[i])
 					if method == (reflect.Value{}) {
@@ -578,15 +579,21 @@ func makeAccessorStage(pair []string, isFunction bool) evaluationOperator {
 						value = returned[0].Interface()
 						continue
 					}
+					return nil, leftStage, rightStage, errors.New("No method '" + pair[i] + "' present on parameter '" + pair[i-1] + "'")
 				}
 			} else if coreValue.Kind() == reflect.Map {
-				var key = reflect.ValueOf(pair[i])
-				valueValue := coreValue.MapIndex(key)
-				if !valueValue.IsValid() {
-					return nil, leftStage, rightStage, errors.New("No field '" + pair[i] + "' present on parameter '" + pair[i-1] + "'")
+				if !isFunction {
+					var key = reflect.ValueOf(pair[i])
+					valueValue := coreValue.MapIndex(key)
+					if !valueValue.IsValid() {
+						return nil, leftStage, rightStage, errors.New("No field '" + pair[i] + "' present on parameter '" + pair[i-1] + "'")
+					}
+					value = valueValue.Interface()
+					continue
+				} else {
+					return nil, leftStage, rightStage, errors.New("No method '" + pair[i] + "' present on parameter '" + pair[i-1] + "'")
 				}
-				value = valueValue.Interface()
-				continue
+
 			}
 
 			// return nil, leftStage, rightStage, errors.New("Method call '" + pair[0] + "." + pair[1] + "' did not return either one value, or a value and an error. Cannot interpret meaning.")
