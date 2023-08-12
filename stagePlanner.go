@@ -339,14 +339,15 @@ func planAccessor(stream *tokenStream) (*evaluationStage, error) {
 	// check if this is meant to be a function or a field.
 	// fields have a clause next to them, functions do not.
 	// if it's a function, parse the arguments. Otherwise leave the right stage null.
+	isFunction := false
 	if stream.hasNext() {
 
 		otherToken = stream.next()
 		if otherToken.Kind == CLAUSE {
-
+			isFunction = true
 			stream.rewind()
 
-			rightStage, err = planTokens(stream)
+			rightStage, err = planValue(stream)
 			if err != nil {
 				return nil, err
 			}
@@ -359,7 +360,7 @@ func planAccessor(stream *tokenStream) (*evaluationStage, error) {
 
 		symbol:          ACCESS,
 		rightStage:      rightStage,
-		operator:        makeAccessorStage(token.Value.([]string)),
+		operator:        makeAccessorStage(token.Value.([]string), isFunction),
 		typeErrorFormat: "Unable to access parameter field or method '%v': %v",
 	}, nil
 }

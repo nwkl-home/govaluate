@@ -472,7 +472,7 @@ func typeConvertParams(method reflect.Value, params []reflect.Value) ([]reflect.
 	return params, nil
 }
 
-func makeAccessorStage(pair []string) evaluationOperator {
+func makeAccessorStage(pair []string, isFunction bool) evaluationOperator {
 
 	reconstructed := strings.Join(pair, ".")
 
@@ -511,84 +511,86 @@ func makeAccessorStage(pair []string) evaluationOperator {
 			}
 
 			if coreValue.Kind() == reflect.Struct {
-				field := coreValue.FieldByName(pair[i])
-				if field != (reflect.Value{}) {
-					value = field.Interface()
-					continue
-				}
-
-				method := coreValue.MethodByName(pair[i])
-				if method == (reflect.Value{}) {
-					if corePtrVal.IsValid() {
-						method = corePtrVal.MethodByName(pair[i])
+				if isFunction {
+					field := coreValue.FieldByName(pair[i])
+					if field != (reflect.Value{}) {
+						value = field.Interface()
+						continue
 					}
+				} else {
+					method := coreValue.MethodByName(pair[i])
 					if method == (reflect.Value{}) {
-						return nil, leftStage, rightStage, errors.New("No method or field '" + pair[i] + "' present on parameter '" + pair[i-1] + "'")
-					}
-				}
-
-				switch right.(type) {
-				case []interface{}:
-
-					givenParams := right.([]interface{})
-					params = make([]reflect.Value, len(givenParams))
-					for idx, _ := range givenParams {
-						params[idx] = reflect.ValueOf(givenParams[idx])
+						if corePtrVal.IsValid() {
+							method = corePtrVal.MethodByName(pair[i])
+						}
+						if method == (reflect.Value{}) {
+							return nil, leftStage, rightStage, errors.New("No method or field '" + pair[i] + "' present on parameter '" + pair[i-1] + "'")
+						}
 					}
 
-				default:
+					switch right.(type) {
+					case []interface{}:
 
-					if right == nil {
-						params = []reflect.Value{}
-						break
+						givenParams := right.([]interface{})
+						params = make([]reflect.Value, len(givenParams))
+						for idx, _ := range givenParams {
+							params[idx] = reflect.ValueOf(givenParams[idx])
+						}
+
+					default:
+
+						if right == nil {
+							params = []reflect.Value{}
+							break
+						}
+
+						params = []reflect.Value{reflect.ValueOf(right.(interface{}))}
 					}
 
-					params = []reflect.Value{reflect.ValueOf(right.(interface{}))}
-				}
+					params, err = typeConvertParams(method, params)
 
-				params, err = typeConvertParams(method, params)
-
-				if err != nil {
-					return nil, leftStage, rightStage, errors.New("Method call failed - '" + pair[0] + "." + pair[1] + "': " + err.Error())
-				}
-
-				returned := method.Call(params)
-				retLength := len(returned)
-
-				if retLength == 0 {
-					return nil, leftStage, rightStage, errors.New("Method call '" + pair[i-1] + "." + pair[i] + "' did not return any values.")
-				}
-
-				if retLength == 1 {
-
-					value = returned[0].Interface()
-					continue
-				}
-
-				if retLength == 2 {
-
-					errIface := returned[1].Interface()
-					err, validType := errIface.(error)
-
-					if validType && errIface != nil {
-						return returned[0].Interface(), leftStage, rightStage, err
+					if err != nil {
+						return nil, leftStage, rightStage, errors.New("Method call failed - '" + pair[0] + "." + pair[1] + "': " + err.Error())
 					}
 
-					value = returned[0].Interface()
-					continue
-				} else if coreValue.Kind() == reflect.Map {
-					var key = reflect.ValueOf(pair[i])
-					valueValue := coreValue.MapIndex(key)
-					if !valueValue.IsValid() {
-						return nil, leftStage, rightStage, errors.New("No field '" + pair[i] + "' present on parameter '" + pair[i-1] + "'")
+					returned := method.Call(params)
+					retLength := len(returned)
+
+					if retLength == 0 {
+						return nil, leftStage, rightStage, errors.New("Method call '" + pair[i-1] + "." + pair[i] + "' did not return any values.")
 					}
-					value = valueValue.Interface()
-					continue
+
+					if retLength == 1 {
+
+						value = returned[0].Interface()
+						continue
+					}
+
+					if retLength == 2 {
+
+						errIface := returned[1].Interface()
+						err, validType := errIface.(error)
+
+						if validType && errIface != nil {
+							return returned[0].Interface(), leftStage, rightStage, err
+						}
+
+						value = returned[0].Interface()
+						continue
+					}
 				}
-
-				return nil, leftStage, rightStage, errors.New("Method call '" + pair[0] + "." + pair[1] + "' did not return either one value, or a value and an error. Cannot interpret meaning.")
-
+			} else if coreValue.Kind() == reflect.Map {
+				var key = reflect.ValueOf(pair[i])
+				valueValue := coreValue.MapIndex(key)
+				if !valueValue.IsValid() {
+					return nil, leftStage, rightStage, errors.New("No field '" + pair[i] + "' present on parameter '" + pair[i-1] + "'")
+				}
+				value = valueValue.Interface()
+				continue
 			}
+
+			// return nil, leftStage, rightStage, errors.New("Method call '" + pair[0] + "." + pair[1] + "' did not return either one value, or a value and an error. Cannot interpret meaning.")
+
 			return nil, leftStage, rightStage, errors.New("Unable to access '" + pair[i] + "', '" + pair[i-1] + "' is not a struct or map")
 
 		}
