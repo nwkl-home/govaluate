@@ -421,6 +421,10 @@ func makeFunctionStage(function ExpressionFunction) evaluationOperator {
 
 		switch right.(type) {
 		case []interface{}:
+			if leftStage == nil {
+				res, err := function(right)
+				return res, leftStage, rightStage, err
+			}
 			res, err := function(right.([]interface{})...)
 			return res, leftStage, rightStage, err
 		default:
@@ -630,7 +634,7 @@ func separatorStage(left, right, leftStage, rightStage interface{}, parameters P
 	//	ret = []interface{}{left, right}
 	//}
 
-	return ret, ret, nil, nil
+	return ret, ret, rightStage, nil
 }
 
 func inStage(left, right, leftStage, rightStage interface{}, parameters Parameters) (interface{}, interface{}, interface{}, error) {

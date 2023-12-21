@@ -169,7 +169,7 @@ func (this EvaluableExpression) evaluateStage(stage *evaluationStage, parameters
 	var err error
 
 	if stage.leftStage != nil {
-		left, leftStageValue, _, err = this.evaluateStage(stage.leftStage, parameters)
+		left, leftStageValue, rightStageValue, err = this.evaluateStage(stage.leftStage, parameters)
 		if err != nil {
 			return nil, nil, nil, err
 		}
@@ -202,7 +202,7 @@ func (this EvaluableExpression) evaluateStage(stage *evaluationStage, parameters
 	}
 
 	if right != shortCircuitHolder && stage.rightStage != nil {
-		right, _, rightStageValue, err = this.evaluateStage(stage.rightStage, parameters)
+		right, leftStageValue, rightStageValue, err = this.evaluateStage(stage.rightStage, parameters)
 		if err != nil {
 			return nil, nil, nil, err
 		}
