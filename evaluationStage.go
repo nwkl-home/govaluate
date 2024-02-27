@@ -421,7 +421,7 @@ func makeFunctionStage(function ExpressionFunction) evaluationOperator {
 
 		switch right.(type) {
 		case []interface{}:
-			if leftStage == nil {
+			if rightStage == nil {
 				res, err := function(right)
 				return res, leftStage, rightStage, err
 			}
